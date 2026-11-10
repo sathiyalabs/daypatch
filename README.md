@@ -1,65 +1,67 @@
 # DayPatch
 
-A cinematic student planner that makes the rest of today work. The public introduction and functional workspace share a calm forest-green, pale-lime and warm-metal identity.
+DayPatch is a student planner for the evenings that go off schedule. Give it your tasks, deadlines, fixed commitments and stop time. It lays out the work that fits and tells you how many minutes still need a home.
 
-## Start
+[Open the live planner](https://daypatch-student-orbit.sathiyalabs2606.chatgpt.site/) · [Read the scheduling engine](lib/planner.ts) · [Browse the tests](tests)
 
-1. Install project dependencies with the supplied Sites installer or `pnpm install`.
-2. Run `pnpm dev` and open the provided URL.
-3. Add a commitment, use a student template, or explicitly load the fictional evening.
+## Try one evening
 
-## Motion and identity
+Open the **Recovery Lab** and select **45m** under *Time lost*. The example starts with a C assignment, maths revision and French slides. Dinner occupies 7–8 pm and the planner reserves a 20-minute buffer before the 10 pm stop.
 
-- Original clock-and-task brand mark and matching favicon.
-- Locally hosted Manrope variable font, with its license in `public/fonts`.
-- A procedural 3D time core: reflective clock face, independently rotating orbital rings and task tiles that gather into an organised arrangement as the visitor scrolls.
-- The clock hands follow local time. The displayed tile commitments are illustrative, not the visitor's private tasks.
-- Four scroll-directed camera chapters with damped pointer parallax, typography transitions and spring-following call-to-action controls.
-- A 3D workflow gallery supporting scroll rotation, horizontal pointer dragging, momentum, arrow buttons, and Left/Right keys. Visible shortcut buttons provide keyboard access to every destination.
-- Ambient-motion pause and a reduced-motion reading layout containing all four chapters and all workflow cards.
-- Three.js native WebGL when supported, with a software renderer using the same mesh geometry and transforms when unavailable. The preview browser used the software path; native WebGL remains unverified in this environment. Rendering pauses offscreen and while the document is hidden. WebGL context loss switches to software rendering.
+| Try this | Study time available | What the planner shows |
+| --- | ---: | --- |
+| Start at 6 pm | 160 min | The 80-minute assignment, 50 minutes of revision and 30 minutes of slides all fit. |
+| Start at 6:45 pm | 115 min | Keeping all three targets leaves 45 minutes unscheduled. |
+| Select **Approve smaller study targets** | 115 min | The assignment keeps its 80 minutes. Revision gets 20 and slides get 15. The remaining 45 minutes of original work stay visible. |
 
-## A working product demonstration
+The lab uses the same planner as the personal workspace. Trying the example leaves your own tasks alone. At the time of this GitHub export, the live demo ran an earlier source revision. The repository includes the subsequent validation and reminder fixes.
 
-The Recovery Lab uses `makePlan`, the same feasibility engine as the workspace. In the fictional evening, 160 work minutes fit around protected dinner and a 20-minute buffer. Losing 45 minutes leaves 115 work minutes and a 45-minute shortfall. Explicitly approving 20 minutes of revision and 15 minutes of presentation work makes the targets fit, while 45 minutes of original work remain outside those targets. Nothing is marked complete or written to the real workspace.
+## Run locally
 
-## Workspace features
+Use Node.js 24 and pnpm 11.25.0. The planner works without an account or API key.
 
-- Create, edit, search and complete tasks with remaining effort, subject, deadline, priority, splittability, dependency blocking and original assignment URL.
-- Deadline-aware scheduling around fixed commitments and reserved buffer time, with overlap checks, invalid-window checks and explanations for work that does not fit.
-- Recovery previews, user-approved daily targets, preserved original effort/deadlines, change explanations and session Undo.
-- Weekly deadlines and backlog, confirmed focus-session history and cumulative confirmed effort.
-- Focus timer with pause/reset and explicit progress logging. A timer ending never completes a task by itself.
-- Six editable student task templates, with user-confirmed effort and deadlines.
-- Per-task submission checks and notes. Submission confirmation is self-reported; the website never submits files or verifies a school portal.
-- Searchable quick actions and tasks through Ctrl K / Command K or the header menu.
-- A current-time planning prompt when today's work window starts in the past.
-- Configurable reminder lead time, quiet hours, optional sound, in-app inbox and browser notification permission. The app must be open; device suspension may delay alerts.
-- Versioned browser-local persistence, validated JSON backups and explicit confirmation before restore/clear. Optional notes/checks/history remain compatible with older version-1 backups. Backup files up to 5 MB can be restored.
+```sh
+git clone https://github.com/sathiyalabs/daypatch.git
+cd daypatch
+pnpm install --frozen-lockfile
+pnpm dev
+```
 
-## Calendar and AI status
+Open the local URL printed in the terminal. A fresh workspace starts in your browser. Add a task with an effort estimate, reserve a commitment, then open the daily plan.
 
-Calendar file import/export and Google Calendar template links work. Exports include reminder alarms, subject to the receiving calendar's notification settings. Timed single-day import supports local floating times, UTC times and a named zone only when it resolves to this device's zone. Recurring and all-day events are not expanded; other named zones are skipped. Verify imported times. Calendar imports are capped at 1 MB and deduplicated by title, date and time.
+## How the planner works
 
-The visitor reviews and saves Google Calendar template events in Google Calendar. Automatic account sync and Classroom OAuth are not enabled. Existing Google Classroom assignment links can be attached to tasks and opened for actual submission.
+The engine takes the free intervals between commitments, reserves the buffer, and considers unfinished tasks in deadline order, using priority to break ties. Splittable work can use several intervals. A task marked unsplittable needs one continuous slot before its deadline. Blocked work and leftover minutes each receive a reason. Approving a smaller daily target preserves the task’s original effort and due date.
 
-AI currently uses a working ChatGPT handoff: copy a structured request, use ChatGPT, import its JSON response, review suggestions and supply unknown effort before adding tasks. No server-side model key has been provisioned or approved. `/api/ai` accurately reports `available:false` and returns a setup-needed error to generation requests. No fake model responses or simulated account connections are presented.
+| File | Where to look |
+| --- | --- |
+| [Planner](lib/planner.ts) | Scheduling, overflow reasons, sample tasks and calendar import/export |
+| [Recovery Lab](components/recovery-lab.tsx) | Interactive example that calls the scheduling engine |
+| [Workspace](lib/workspace.ts) | Backup validation, calendar deduplication and parsing AI suggestions |
+| [Reminders](lib/reminders.ts) | Lead times, quiet hours, task starts and approaching deadlines |
+| [App](app/page.tsx) | Task editing, focus sessions, weekly view, submission checklist and undo |
 
-## Storage and limits
+## Using your own data
 
-Tasks, settings, notes, checklist ticks and confirmed focus history are saved on the current browser and origin. No account sync, cross-device cloud backup, email/SMS delivery, closed-app push or guaranteed on-time submission is claimed. Export a backup before clearing browser data. Use imported calendar alarms for closed-app reminders.
+- **Planning and focus.** Add a task or start from one of six student templates. Keep assignment links, notes and submission checks with the task. When a focus timer ends, confirm the minutes worked to update progress.
+- **Storage.** Tasks and focus history are saved in the current browser. Export a JSON backup before clearing browser data or moving devices. Restore accepts validated backups up to 5 MB.
+- **Calendar and reminders.** Exchange timed, single-day events through calendar files, or review a Google Calendar template before saving it. Imports are limited to 1 MB. Recurring events, all-day events and unsupported time zones are skipped. In-app reminders need the app open. Calendar alarms depend on the receiving calendar’s settings.
+- **AI suggestions.** The optional ChatGPT handoff lets you copy a prompt, import the returned JSON and review each suggestion. Supply missing effort before adding a task. The server-side generation endpoint reports that an integration is required.
+- **Accessibility.** The landing page offers reduced motion, keyboard navigation, an animation pause control and a software-rendered fallback for the 3D clock.
 
-## Verification
+## Verify a change
 
-- `node node_modules/typescript/bin/tsc --noEmit`
-- `node --experimental-strip-types tests/planner.test.ts`
-- `node --experimental-strip-types tests/security.test.ts`
-- `node --experimental-strip-types tests/reminders.test.ts`
-- Production build through the Sites build helper.
-- Browser checks of the software-rendered motion journey, chapter navigation, horizontal gallery drag, arrow controls, Recovery Lab calculations, task templates, checklist/note persistence, command search, focus history and reduced-motion mode.
+The regression checks run directly in Node, even before installing frontend dependencies.
 
-The planner tests cover capacity, time-loss overflow, approved recovery, task immutability, protected commitments/buffer, invalid windows, expired deadlines, unsplittable tasks, blocked/completed work, overlapping fixed commitments, deadline cutoff and calendar round-trips.
+```sh
+node --experimental-strip-types --test tests/planner.test.ts tests/reminders.test.ts tests/security.test.ts
+```
 
-## Security review
+The three files cover **52 scenarios** across scheduling, reminder timing, backups, calendar parsing and input validation. After installing dependencies, run the type check and production build.
 
-See [SECURITY-REVIEW.md](SECURITY-REVIEW.md) for fixes, 52 automated scenarios, browser evidence and unresolved dependency findings. This is not a complete security sign-off. Invalid stored data is preserved for recovery; restores and calendar imports enforce bounded, validated structures. The current CSP restricts objects, base URLs, form destinations and framing but does not enforce script-src.
+```sh
+pnpm exec tsc --noEmit
+pnpm build
+```
+
+The [security review](SECURITY-REVIEW.md) records the original audit date, browser checks and outstanding dependency findings. The bundled font license is in [public/fonts](public/fonts).
