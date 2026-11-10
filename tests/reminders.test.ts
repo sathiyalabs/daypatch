@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {defaults,demoTasks,makePlan} from '../lib/planner.ts';
+import {dueReminders} from '../lib/reminders.ts';
+const date='2026-11-05',tasks=demoTasks(date),settings={...defaults(),date,reminders:true,start:'18:00',end:'22:00',lead:10};
+const plan=makePlan(tasks,[],settings),at=(time:string)=>new Date(date+'T'+time+':00');
+assert.equal(dueReminders(tasks,plan,{...settings,reminders:false},at('17:50')).length,0);
+assert.equal(dueReminders(tasks,plan,settings,at('17:49')).length,0);
+assert.ok(dueReminders(tasks,plan,settings,at('17:50')).some(a=>a.title.startsWith('Start:')));
+assert.equal(dueReminders(tasks,plan,settings,at('18:01')).some(a=>a.time===1080),false);
+assert.equal(dueReminders(tasks,plan,settings,new Date('2026-11-06T17:50:00')).length,0);
+assert.equal(dueReminders(tasks,plan,{...settings,quietStart:'17:00',quietEnd:'19:00'},at('17:50')).length,0);
+assert.equal(dueReminders(tasks,plan,{...settings,quietStart:'17:00',quietEnd:'07:00'},at('17:50')).length,0);
+assert.ok(dueReminders(tasks,plan,{...settings,quietStart:'17:00',quietEnd:'17:00'},at('17:50')).length>0);
+assert.ok(dueReminders(tasks,plan,settings,at('21:50')).some(a=>a.title.startsWith('Due soon:')));
+assert.equal(dueReminders(tasks.map(t=>({...t,done:true})),{...plan,blocks:[]},settings,at('21:50')).length,0);
+console.log('PASS: 10 reminder scenarios: lead boundary, expiry, date, quiet hours, disabled reminders and completed tasks.');
