@@ -7,23 +7,23 @@ const date='2026-11-05';
 const base=()=>({version:1,tasks:demoTasks(date),fixed:[],settings:{...defaults(),date},targets:{},receipt:[],example:false});
 let passed=0;
 function test(name:string,fn:()=>void){fn();passed++;console.log('PASS:',name);}
-function reject(change:(v:any)=>void){const v=base();change(v);assert.equal(validateBackup(v),false);}
+function reject(path:string,value:unknown){const v=base(),parts=path.split('.');let target:unknown=v;for(const part of parts.slice(0,-1))target=(target as Record<string,unknown>)[part];(target as Record<string,unknown>)[parts[parts.length-1]]=value;assert.equal(validateBackup(v),false);}
 test('Current and older v1 backups remain valid',()=>assert.equal(validateBackup(base()),true));
 for(const [name,value]of Object.entries({null:null,array:[],string:'bad'}))test('Reject '+name+' backup',()=>assert.equal(validateBackup(value),false));
-test('Null task cannot crash backup validation',()=>reject(v=>v.tasks=[null]));
-test('Null session cannot crash validation',()=>reject(v=>v.sessions=[null]));
-test('Boolean settings are enforced',()=>reject(v=>v.settings.reminders='true'));
-test('Impossible dates are rejected',()=>reject(v=>v.settings.date='2026-02-30'));
-test('Impossible quiet-hour times are rejected',()=>reject(v=>v.settings.quietStart='99:99'));
-test('Invalid task deadline is rejected',()=>reject(v=>v.tasks[0].due='2026-11-05T27:00'));
-test('Non-integer and inflated durations are rejected',()=>{reject(v=>v.tasks[0].minutes=Infinity);reject(v=>v.tasks[0].remaining=80.5);reject(v=>v.tasks[0].remaining=2000);});
-test('Duplicate task IDs are rejected',()=>reject(v=>v.tasks[1].id=v.tasks[0].id));
-test('Prototype-related IDs are rejected',()=>reject(v=>v.tasks[0].id='__proto__'));
-test('Prototype-related map keys are rejected',()=>reject(v=>v.targets=JSON.parse('{"__proto__":40}')));
-test('Oversized collections are rejected',()=>reject(v=>v.tasks=Array.from({length:301},(_,i)=>({...v.tasks[0],id:'t-'+i}))));
-test('Forged submission-check values are rejected',()=>reject(v=>v.checks={'demo-c':['executed']}));
-test('Unbounded note data is rejected',()=>reject(v=>v.notes={'demo-c':'x'.repeat(2001)}));
-test('Unsafe URLs are rejected at restore',()=>reject(v=>v.tasks[0].url='javascript:alert(1)'));
+test('Null task cannot crash backup validation',()=>reject('tasks',[null]));
+test('Null session cannot crash validation',()=>reject('sessions',[null]));
+test('Boolean settings are enforced',()=>reject('settings.reminders','true'));
+test('Impossible dates are rejected',()=>reject('settings.date','2026-02-30'));
+test('Impossible quiet-hour times are rejected',()=>reject('settings.quietStart','99:99'));
+test('Invalid task deadline is rejected',()=>reject('tasks.0.due','2026-11-05T27:00'));
+test('Non-integer and inflated durations are rejected',()=>{reject('tasks.0.minutes',Infinity);reject('tasks.0.remaining',80.5);reject('tasks.0.remaining',2000);});
+test('Duplicate task IDs are rejected',()=>reject('tasks.1.id',base().tasks[0].id));
+test('Prototype-related IDs are rejected',()=>reject('tasks.0.id','__proto__'));
+test('Prototype-related map keys are rejected',()=>reject('targets',JSON.parse('{"__proto__":40}')));
+test('Oversized collections are rejected',()=>reject('tasks',Array.from({length:301},(_,i)=>({...base().tasks[0],id:'t-'+i}))));
+test('Forged submission-check values are rejected',()=>reject('checks',{'demo-c':['executed']}));
+test('Unbounded note data is rejected',()=>reject('notes',{'demo-c':'x'.repeat(2001)}));
+test('Unsafe URLs are rejected at restore',()=>reject('tasks.0.url','javascript:alert(1)'));
 test('URL protocols, credentials and control characters are blocked',()=>{for(const value of ['javascript:alert(1)','data:text/html,bad','file:///etc/passwd','https://a:b@example.com','https://example.com/\npath'])assert.equal(safeURL(value),'');assert.equal(safeURL('https://classroom.google.com/a'),'https://classroom.google.com/a');});
 test('Real date and time bounds',()=>{assert.ok(validDate('2024-02-29'));assert.ok(!validDate('2025-02-29'));assert.ok(validTime('23:59'));assert.ok(!validTime('24:00'));});
 test('AI suggestions reject malformed and oversized lists',()=>{assert.throws(()=>parseAISuggestions({tasks:[null]}));assert.throws(()=>parseAISuggestions({tasks:Array(21).fill({title:'x'})}));});

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {makePlan,defaults,demoTasks,parseICS,calendarICS,type Task} from '../lib/planner.ts';
+import {makePlan,defaults,demoTasks,toggleTaskCompletion,parseICS,calendarICS} from '../lib/planner.ts';
 const date='2026-11-05';const settings={...defaults(),date,start:'18:00',end:'22:00',buffer:20};const tasks=demoTasks(date);const fixed=[{id:'dinner',title:'Dinner',start:'19:00',end:'20:00',date}];
 const original=JSON.stringify(tasks);
 const base=makePlan(tasks,fixed,settings);
@@ -19,3 +19,12 @@ const overlap=makePlan([], [...fixed,{id:'extra',title:'Overlap',start:'19:30',e
 const dueTask={...tasks[0],due:date+'T18:30'};assert.equal(makePlan([dueTask],[],settings).scheduled,30,'Work cannot pass the deadline');
 const out=calendarICS(base.blocks,date,10);assert.ok(out.includes('BEGIN:VALARM'));assert.ok(out.includes('TRIGGER:-PT10M'));assert.equal(parseICS(out,date).length,4);assert.equal(parseICS(out,'2026-11-06').length,0);
 console.log('PASS: 12 planner scenarios, recovery invariants, and calendar export/import.');
+
+const finished={...tasks[0],done:true,remaining:0};
+const reopened=toggleTaskCompletion(finished);
+assert.equal(reopened.done,false);assert.equal(reopened.remaining,finished.minutes);
+assert.equal(makePlan([reopened],[],settings).scheduled,finished.minutes);
+assert.equal(finished.remaining,0,'Reopening does not mutate the completed task');
+const manuallyCompleted=toggleTaskCompletion({...tasks[0],remaining:25});
+assert.equal(manuallyCompleted.done,true);assert.equal(toggleTaskCompletion(manuallyCompleted).remaining,25);
+console.log('PASS: Reopened tasks restore schedulable effort and preserve partial estimates.');

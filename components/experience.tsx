@@ -1,15 +1,19 @@
 'use client';
-import {useEffect,useRef,useState,lazy,Suspense,type PointerEvent as ReactPointerEvent} from 'react';
+import {useEffect,useRef,useState,useSyncExternalStore,lazy,Suspense,type PointerEvent as ReactPointerEvent} from 'react';
 import RecoveryLab from './recovery-lab';
 import BrandMark from './brand-mark';
-import {ArrowUpRight,ArrowDown,ArrowRight,RotateCcw,Focus,CalendarDays,Bell,Check,Link2,ShieldCheck,Plus,Command,CheckCheck,Clock3,ChevronLeft,ChevronRight,Pause,Play} from 'lucide-react';
+import {ArrowUpRight,ArrowDown,RotateCcw,Focus,CalendarDays,Bell,Link2,ShieldCheck,Command,CheckCheck,Clock3,ChevronLeft,ChevronRight,Pause,Play} from 'lucide-react';
 const Sculpture=lazy(()=>import('./time-core'));
 const clamp=(n:number)=>Math.max(0,Math.min(1,n));
+const motionQuery='(prefers-reduced-motion: reduce)';
+const subscribeMotion=(listener:()=>void)=>{const query=matchMedia(motionQuery);query.addEventListener('change',listener);return()=>query.removeEventListener('change',listener);};
+const getMotion=()=>matchMedia(motionQuery).matches;
+const getServerMotion=()=>false;
 const chapters=['The possibility','The reality','The recovery','Your universe'];
 type Destination='planner'|'week'|'focus'|'connections'|'settings';
 export default function Experience({onEnter,onRecover,reduced=false}:{onEnter:(view:Destination)=>void;onRecover:()=>void;reduced?:boolean}){
- const root=useRef<HTMLDivElement>(null),sticky=useRef<HTMLDivElement>(null),scenes=useRef<(HTMLElement|null)[]>([]),gallery=useRef<HTMLDivElement>(null),progress=useRef(0),chapterRef=useRef(0);const [chapter,setChapter]=useState(0);const [reducedSystem,setReducedSystem]=useState(false);const [activeCard,setActiveCard]=useState(0);const target=useRef(0);const page=useRef<HTMLDivElement>(null);const dragOffset=useRef(0),momentum=useRef(0),activeIndex=useRef(0),drag=useRef<{x:number;y:number;start:number;last:number;at:number;moved:boolean}|null>(null),suppressClick=useRef(0);const [ambientPaused,setAmbientPaused]=useState(false);
- useEffect(()=>{const m=matchMedia('(prefers-reduced-motion: reduce)');setReducedSystem(m.matches);const update=()=>setReducedSystem(m.matches);m.addEventListener('change',update);return()=>m.removeEventListener('change',update);},[]);
+ const root=useRef<HTMLDivElement>(null),sticky=useRef<HTMLDivElement>(null),scenes=useRef<(HTMLElement|null)[]>([]),gallery=useRef<HTMLDivElement>(null),progress=useRef(0),chapterRef=useRef(0);const [chapter,setChapter]=useState(0);const reducedSystem=useSyncExternalStore(subscribeMotion,getMotion,getServerMotion);const [activeCard,setActiveCard]=useState(0);const target=useRef(0);const page=useRef<HTMLDivElement>(null);const dragOffset=useRef(0),momentum=useRef(0),activeIndex=useRef(0),drag=useRef<{x:number;y:number;start:number;last:number;at:number;moved:boolean}|null>(null),suppressClick=useRef(0);const [ambientPaused,setAmbientPaused]=useState(false);
+
  const still=reduced||reducedSystem;
  useEffect(()=>{const el=root.current;if(!el)return;let frame=0,last=performance.now(),running=true;let visible=true;const measure=()=>{const r=el.getBoundingClientRect();target.current=clamp(-r.top/Math.max(1,el.offsetHeight-innerHeight));visible=r.bottom>0&&r.top<innerHeight;};measure();window.addEventListener('scroll',measure,{passive:true});window.addEventListener('resize',measure,{passive:true});
   const draw=(ts:number)=>{if(!running)return;const dt=Math.min(.05,(ts-last)/1000);last=ts;if(still)progress.current=0;else progress.current+=(target.current-progress.current)*(1-Math.exp(-dt*7.5));const p=progress.current;if(visible){sticky.current?.style.setProperty('--journey',String(p));const centers=[0,.28,.52,.83];let current=0;centers.forEach((c,i)=>{if(p>c-(i===0?0:.11))current=i});if(chapterRef.current!==current){chapterRef.current=current;setChapter(current);}

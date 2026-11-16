@@ -1,5 +1,9 @@
 import {validDate,validTime} from './workspace.ts';
 export type Task = { id:string; title:string; course:string; minutes:number; remaining:number; due:string; priority:'high'|'medium'|'low'; split:boolean; done:boolean; url:string; source:string; blocked:boolean };
+// Reopening restores the existing estimate when confirmed progress used all effort.
+export function toggleTaskCompletion(task:Task):Task {
+ return task.done?{...task,done:false,remaining:task.remaining||task.minutes}:{...task,done:true};
+}
 export type Fixed = {id:string; title:string; start:string; end:string; date?:string};
 export type Settings = { date:string; start:string; end:string; buffer:number; lead:number; reminders:boolean; sound:boolean; quietStart:string; quietEnd:string; reduced:boolean };
 export type Block = { id:string; title:string; start:number; end:number; kind:'task'|'fixed'|'buffer'; taskId?:string; course?:string };
